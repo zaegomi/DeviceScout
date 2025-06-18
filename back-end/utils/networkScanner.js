@@ -68,7 +68,46 @@ function testNmap() {
     });
 }
 
+// Scan network for devices
+function scanNetwork(subnet) {
+    return new Promise((resolve, reject) => {
+        console.log(`🔍 Starting network scan of: ${subnet}`);
+        
+        const quickscan = new nmap.QuickScan(subnet);
+        
+        quickscan.on('complete', function(data) {
+            console.log(`✅ Scan completed! Found ${data.length} devices`);
+            
+            const devices = data.map((device, index) => {
+                console.log(`📱 Device ${index + 1}: ${device.ip} - ${device.hostname || 'Unknown'}`);
+                
+                return {
+                    ip: device.ip,
+                    hostname: device.hostname || 'Unknown',
+                    mac: device.mac || 'Unknown',
+                    vendor: device.vendor || 'Unknown',
+                    state: device.state || 'up',
+                    openPorts: device.openPorts || [],
+                    osNmap: device.osNmap || 'Unknown',
+                    lastSeen: new Date().toISOString()
+                };
+            });
+            
+            resolve(devices);
+        });
+        
+        quickscan.on('error', function(error) {
+            console.error('❌ Scan error:', error.message);
+            reject(error);
+        });
+        
+        console.log('⏳ Scanning in progress...');
+        quickscan.startScan();
+    });
+}
+
 module.exports = {
     getNetworkInfo,
-    testNmap
+    testNmap,
+    scanNetwork
 };

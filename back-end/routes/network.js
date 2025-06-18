@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getNetworkInfo, testNmap } = require('../utils/networkScanner');
+const { getNetworkInfo, testNmap, scanNetwork } = require('../utils/networkScanner');
 
 // GET /api/network-info - Get current network information
 router.get('/network-info', async (req, res) => {
@@ -38,6 +38,38 @@ router.get('/test-nmap', async (req, res) => {
         res.status(500).json({
             success: false,
             error: error.message
+        });
+    }
+});
+
+// GET /api/scan - Perform network device scan
+router.get('/scan', async (req, res) => {
+    try {
+        console.log('🔍 Starting network device scan...');
+        
+        // Get network info first
+        const networkInfo = await getNetworkInfo();
+        console.log(`📡 Scanning network: ${networkInfo.subnet}`);
+        
+        // Perform the scan
+        const devices = await scanNetwork(networkInfo.subnet);
+        
+        console.log(`✅ Scan completed successfully! Found ${devices.length} devices`);
+        
+        res.json({
+            success: true,
+            network: networkInfo,
+            devices: devices,
+            deviceCount: devices.length,
+            timestamp: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('❌ Scan failed:', error.message);
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            timestamp: new Date().toISOString()
         });
     }
 });

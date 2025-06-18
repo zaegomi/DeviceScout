@@ -21,7 +21,8 @@ app.get('/', (req, res) => {
         timestamp: new Date().toISOString(),
         availableEndpoints: [
             'GET /api/network-info',
-            'GET /api/test-nmap'
+            'GET /api/test-nmap',
+            'GET /api/scan'  // Add this line
         ]
     });
 });
@@ -32,4 +33,5 @@ app.listen(PORT, () => {
     console.log(`📡 Test endpoints:`);
     console.log(`   - http://localhost:${PORT}/api/network-info`);
     console.log(`   - http://localhost:${PORT}/api/test-nmap`);
+    console.log(`   - http://localhost:${PORT}/api/scan`);  // Add this line
 });
