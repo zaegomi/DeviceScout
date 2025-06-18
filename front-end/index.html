@@ -341,14 +341,33 @@
                 'Kindle'
             ];
 
-            const handleScan = () => {
-                setIsScanning(true);
-                setTimeout(() => {
-                    setIsScanning(false);
-                    setDeviceCount(devices.length);
-                    setCurrentPage('dashboard');
-                }, 3000);
-            };
+            const handleScan = async () => {
+    setIsScanning(true);
+    
+    try {
+        console.log('🔍 Starting network scan...');
+        
+        // Call your backend API
+        const response = await fetch('http://localhost:3001/api/scan');
+        const data = await response.json();
+        
+        if (data.success) {
+            console.log('✅ Scan completed:', data);
+            setDeviceCount(data.devices.length);
+            // You can store the devices data in state if needed
+            // setDevices(data.devices);
+        } else {
+            console.error('❌ Scan failed:', data.error);
+            alert('Scan failed: ' + data.error);
+        }
+    } catch (error) {
+        console.error('❌ Network error:', error);
+        alert('Could not connect to backend. Make sure the server is running.');
+    } finally {
+        setIsScanning(false);
+        setCurrentPage('dashboard');
+    }
+};
 
             const navigateToPage = (page) => {
                 setCurrentPage(page);
