@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
-const scanRoutes = require('./routes/scan');
+
+// Import routes
+const networkRoutes = require('./routes/network');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -10,13 +12,24 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/api', scanRoutes);
+app.use('/api', networkRoutes);
 
 // Test route
 app.get('/', (req, res) => {
-    res.json({ message: 'DeviceScout Backend API is running!' });
+    res.json({ 
+        message: 'DeviceScout Backend API is running!',
+        timestamp: new Date().toISOString(),
+        availableEndpoints: [
+            'GET /api/network-info',
+            'GET /api/test-nmap'
+        ]
+    });
 });
 
+// Start server
 app.listen(PORT, () => {
     console.log(`🚀 DeviceScout Backend running on http://localhost:${PORT}`);
+    console.log(`📡 Test endpoints:`);
+    console.log(`   - http://localhost:${PORT}/api/network-info`);
+    console.log(`   - http://localhost:${PORT}/api/test-nmap`);
 });
