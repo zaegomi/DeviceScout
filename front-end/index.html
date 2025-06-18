@@ -333,13 +333,10 @@
             const [isScanning, setIsScanning] = useState(false);
             const [deviceCount, setDeviceCount] = useState(0);
             const [securityScore] = useState(40);
+            const [devices, setDevices] = useState([]);
 
-            const devices = [
-                'Brother Printer',
-                'LG Smart TV',
-                'iPhone',
-                'Kindle'
-            ];
+            
+            
 
             const handleScan = async () => {
     setIsScanning(true);
@@ -353,16 +350,21 @@
         
         if (data.success) {
             console.log('✅ Scan completed:', data);
-            setDeviceCount(data.devices.length);
-            // You can store the devices data in state if needed
-            // setDevices(data.devices);
+            
+            // Update state with real data
+            setDeviceCount(data.deviceCount);
+            
+            // Store the actual devices (add this state if you don't have it)
+            setDevices(data.devices);
+            
+            console.log(`📱 Found ${data.deviceCount} devices on network ${data.network.subnet}`);
         } else {
             console.error('❌ Scan failed:', data.error);
             alert('Scan failed: ' + data.error);
         }
     } catch (error) {
         console.error('❌ Network error:', error);
-        alert('Could not connect to backend. Make sure the server is running.');
+        alert('Could not connect to backend. Make sure the server is running on http://localhost:3001');
     } finally {
         setIsScanning(false);
         setCurrentPage('dashboard');
@@ -476,21 +478,30 @@
                         </div>
 
                         {/* Devices Page */}
-                        <div className={`page ${currentPage === 'devices' ? 'active' : ''}`}>
-                            <div className="device-container">
-                                <h2 className="device-title">Device Information</h2>
-                                <div className="device-list">
-                                    {devices.map((device, index) => (
-                                        <div key={index} className="device-item">
-                                            {device}
-                                        </div>
-                                    ))}
-                                </div>
-                                <div style={{marginTop: '30px', textAlign: 'center', color: '#64748b'}}>
-                                    <p>Click on any device for detailed information and security analysis</p>
-                                </div>
-                            </div>
+<div className={`page ${currentPage === 'devices' ? 'active' : ''}`}>
+    <div className="device-container">
+        <h2 className="device-title">Device Information</h2>
+        <div className="device-list">
+            {devices.length > 0 ? (
+                devices.map((device, index) => (
+                    <div key={index} className="device-item">
+                        <div style={{fontWeight: 'bold'}}>{device.hostname}</div>
+                        <div style={{fontSize: '0.9rem', color: '#64748b', marginTop: '5px'}}>
+                            {device.ip} • {device.vendor}
                         </div>
+                    </div>
+                ))
+            ) : (
+                <div className="device-item">
+                    No devices found. Run a scan first.
+                </div>
+            )}
+        </div>
+        <div style={{marginTop: '30px', textAlign: 'center', color: '#64748b'}}>
+            <p>Click on any device for detailed information and security analysis</p>
+        </div>
+    </div>
+</div>
 
                         {/* Security Page */}
                         <div className={`page ${currentPage === 'security' ? 'active' : ''}`}>
