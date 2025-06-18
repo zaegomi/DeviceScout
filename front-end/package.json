@@ -1,0 +1,12 @@
+{
+  "name": "devicescout-frontend",
+  "version": "1.0.0",
+  "description": "DeviceScout Network Security Scanner",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx serve .",
+    "dev": "npx live-server ."
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
