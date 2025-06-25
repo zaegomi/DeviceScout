@@ -42,25 +42,27 @@ router.get('/test-nmap', async (req, res) => {
     }
 });
 
-// GET /api/scan - Perform network device scan
+// GET /api/scan - Perform network device scan with security assessment
 router.get('/scan', async (req, res) => {
     try {
-        console.log('🔍 Starting network device scan...');
+        console.log('🔍 Starting network device scan with security assessment...');
         
         // Get network info first
         const networkInfo = await getNetworkInfo();
-        console.log(`📡 Scanning network: ${networkInfo.subnet}`);
+        console.log('📡 Scanning network: ' + networkInfo.subnet);
         
-        // Perform the scan
-        const devices = await scanNetwork(networkInfo.subnet);
+        // Perform the enhanced scan with security assessment
+        const scanResult = await scanNetwork(networkInfo.subnet);
         
-        console.log(`✅ Scan completed successfully! Found ${devices.length} devices`);
+        console.log('✅ Scan completed successfully! Found ' + scanResult.devices.length + ' devices');
+        console.log('🔒 Security Score: ' + scanResult.securityAssessment.overallScore + '/100');
         
         res.json({
             success: true,
             network: networkInfo,
-            devices: devices,
-            deviceCount: devices.length,
+            devices: scanResult.devices,
+            deviceCount: scanResult.devices.length,
+            securityAssessment: scanResult.securityAssessment,
             timestamp: new Date().toISOString()
         });
         

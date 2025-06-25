@@ -373,7 +373,8 @@
             const [isScanning, setIsScanning] = useState(false);
             const [scanProgress, setScanProgress] = useState('');
             const [deviceCount, setDeviceCount] = useState(0);
-            const [securityScore] = useState(40);
+            const [securityScore, setSecurityScore] = useState(0);
+            const [securityAssessment, setSecurityAssessment] = useState(null);
             const [devices, setDevices] = useState([]);
 
             // Function to get device icon class based on vendor or device type
@@ -445,6 +446,14 @@
                         // Update state with enhanced data
                         setDeviceCount(data.deviceCount);
                         setDevices(data.devices || []);
+                        
+                        // Update security assessment
+                        if (data.securityAssessment) {
+                            setSecurityScore(data.securityAssessment.overallScore);
+                            setSecurityAssessment(data.securityAssessment);
+                            console.log('🔒 Security Score: ' + data.securityAssessment.overallScore + '/100');
+                            console.log('⚠️ Vulnerabilities: ' + data.securityAssessment.totalVulnerabilities);
+                        }
                         
                         console.log(`📱 Enhanced scan found ${data.deviceCount} devices on network ${data.network.subnet}`);
                         
@@ -564,26 +573,26 @@
                                     <h2 className="card-title">Security Score</h2>
                                     <div className="card-content">
                                         <div className="metric-value">{securityScore}/100</div>
-                                        <div className="metric-label">Overall Security</div>
-                                        <div style={{fontSize: '0.9rem', color: '#e53e3e', marginTop: '10px'}}>
-                                            ⚠ Needs Attention
+                                        <div className="metric-label">Network Security</div>
+                                        <div style={{fontSize: '0.9rem', color: securityScore >= 80 ? '#38a169' : securityScore >= 60 ? '#d69e2e' : '#e53e3e', marginTop: '10px'}}>
+                                            {securityScore >= 80 ? '✓ Good Security' : securityScore >= 60 ? '⚠ Needs Improvement' : '⚠ High Risk'}
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="dashboard-card">
-                                    <h2 className="card-title">Device Types Found</h2>
+                                    <h2 className="card-title">Security Analysis</h2>
                                     <div className="card-content">
                                         <div style={{fontSize: '1.1rem', color: '#2d3748', lineHeight: '1.6'}}>
-                                            {devices.length > 0 ? (
+                                            {securityAssessment ? (
                                                 <>
-                                                    <div>🎮 Gaming: {devices.filter(d => d.deviceType.toLowerCase().includes('nintendo') || d.deviceType.toLowerCase().includes('console')).length}</div>
-                                                    <div>📱 Mobile: {devices.filter(d => d.deviceType.toLowerCase().includes('iphone') || d.deviceType.toLowerCase().includes('android')).length}</div>
-                                                    <div>🖨️ Printers: {devices.filter(d => d.deviceType.toLowerCase().includes('printer')).length}</div>
-                                                    <div>📺 Smart TVs: {devices.filter(d => d.deviceType.toLowerCase().includes('tv')).length}</div>
+                                                    <div>🔍 Total Vulnerabilities: {securityAssessment.totalVulnerabilities}</div>
+                                                    <div>🚨 Critical Issues: {securityAssessment.criticalVulnerabilities}</div>
+                                                    <div>⚠️ High Risk Issues: {securityAssessment.highVulnerabilities}</div>
+                                                    <div>📊 Average Device Score: {securityAssessment.averageDeviceScore}/100</div>
                                                 </>
                                             ) : (
-                                                <div>No devices scanned yet</div>
+                                                <div>Run a scan to see security analysis</div>
                                             )}
                                         </div>
                                     </div>
@@ -628,6 +637,12 @@
                                                         <span className="detail-value">{device.operatingSystem}</span>
                                                     </div>
                                                     <div className="detail-row">
+                                                        <span className="detail-label">Detection Method:</span>
+                                                        <span className="detail-value" style={{fontSize: '0.8rem', textTransform: 'capitalize'}}>
+                                                            {device.detectionMethod?.replace('_', ' ') || 'Basic'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="detail-row">
                                                         <span className="detail-label">MAC Address:</span>
                                                         <span className="detail-value" style={{fontSize: '0.8rem'}}>{device.mac}</span>
                                                     </div>
@@ -635,6 +650,17 @@
                                                         <span className="detail-label">Open Ports:</span>
                                                         <span className="detail-value">{device.openPorts.length}</span>
                                                     </div>
+                                                    
+                                                    {device.insights && device.insights.length > 0 && (
+                                                        <div style={{marginTop: '10px'}}>
+                                                            <div className="detail-label" style={{marginBottom: '5px'}}>Insights:</div>
+                                                            <div style={{fontSize: '0.85rem', lineHeight: '1.4'}}>
+                                                                {device.insights.map((insight, idx) => (
+                                                                    <div key={idx} style={{color: '#2563eb', marginBottom: '2px'}}>{insight}</div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                     
                                                     {device.services && device.services.length > 0 && (
                                                         <div style={{marginTop: '10px'}}>
@@ -646,6 +672,17 @@
                                                                 {device.services.length > 4 && (
                                                                     <span className="service-tag">+{device.services.length - 4} more</span>
                                                                 )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {device.alternativeDetections && device.alternativeDetections.length > 0 && (
+                                                        <div style={{marginTop: '10px'}}>
+                                                            <div className="detail-label" style={{marginBottom: '5px'}}>Alternative Detections:</div>
+                                                            <div style={{fontSize: '0.8rem', color: '#64748b'}}>
+                                                                {device.alternativeDetections.map((alt, idx) => (
+                                                                    <div key={idx}>• {alt.deviceType} ({alt.confidence}%)</div>
+                                                                ))}
                                                             </div>
                                                         </div>
                                                     )}
@@ -668,34 +705,107 @@
                         {/* Security Page */}
                         <div className={`page ${currentPage === 'security' ? 'active' : ''}`}>
                             <div className="device-container">
-                                <h2 className="device-title">Security Assessment</h2>
+                                <h2 className="device-title">Real-Time Security Assessment</h2>
                                 <div style={{textAlign: 'center', marginBottom: '40px'}}>
-                                    <div style={{fontSize: '4rem', fontWeight: '700', color: '#e53e3e', marginBottom: '10px'}}>
+                                    <div style={{fontSize: '4rem', fontWeight: '700', color: securityScore >= 80 ? '#38a169' : securityScore >= 60 ? '#d69e2e' : '#e53e3e', marginBottom: '10px'}}>
                                         {securityScore}/100
                                     </div>
-                                    <div style={{fontSize: '2rem', fontWeight: '700', color: '#e53e3e', textTransform: 'uppercase', letterSpacing: '2px'}}>
-                                        POOR
+                                    <div style={{fontSize: '2rem', fontWeight: '700', color: securityScore >= 80 ? '#38a169' : securityScore >= 60 ? '#d69e2e' : '#e53e3e', textTransform: 'uppercase', letterSpacing: '2px'}}>
+                                        {securityScore >= 80 ? 'SECURE' : securityScore >= 60 ? 'MODERATE' : securityScore >= 40 ? 'POOR' : 'CRITICAL'}
                                     </div>
                                 </div>
                                 
-                                <div style={{background: '#fff5f5', border: '2px solid #fed7d7', borderRadius: '15px', padding: '30px'}}>
-                                    <div style={{color: '#e53e3e', fontWeight: '600', fontSize: '1.2rem', marginBottom: '20px'}}>
-                                        ⚠ Enhanced Security Analysis
-                                    </div>
-                                    <div style={{color: '#4a5568', lineHeight: '1.8', fontSize: '1.1rem'}}>
-                                        <div style={{marginBottom: '10px'}}>• {devices.filter(d => d.deviceType.includes('Unknown')).length} devices need better identification</div>
-                                        <div style={{marginBottom: '10px'}}>• {devices.filter(d => d.confidence < 50).length} devices with low confidence detection</div>
-                                        <div style={{marginBottom: '10px'}}>• {devices.filter(d => d.openPorts.length > 5).length} devices with multiple open ports</div>
-                                        <div style={{marginBottom: '10px'}}>• Enhanced scanning reveals more potential vulnerabilities</div>
-                                    </div>
-                                    <div style={{marginTop: '25px', padding: '20px', background: '#e2e8f0', borderRadius: '10px'}}>
-                                        <strong style={{color: '#2d3748'}}>Enhanced Recommendation:</strong>
-                                        <div style={{marginTop: '10px', color: '#4a5568'}}>
-                                            Review all identified devices and ensure unknown devices are properly secured. 
-                                            Consider updating firmware on devices with low security confidence scores.
+                                {securityAssessment && securityAssessment.vulnerabilities.length > 0 ? (
+                                    <div style={{background: '#fff5f5', border: '2px solid #fed7d7', borderRadius: '15px', padding: '30px', marginBottom: '30px'}}>
+                                        <div style={{color: '#e53e3e', fontWeight: '600', fontSize: '1.2rem', marginBottom: '20px'}}>
+                                            🚨 Security Issues Found ({securityAssessment.totalVulnerabilities} total)
+                                        </div>
+                                        
+                                        <div style={{maxHeight: '300px', overflowY: 'auto'}}>
+                                            {securityAssessment.vulnerabilities.slice(0, 8).map((vuln, index) => (
+                                                <div key={index} style={{
+                                                    background: 'white', 
+                                                    margin: '10px 0', 
+                                                    padding: '15px', 
+                                                    borderRadius: '8px',
+                                                    borderLeft: `4px solid ${vuln.risk === 'CRITICAL' ? '#e53e3e' : vuln.risk === 'HIGH' ? '#f56565' : vuln.risk === 'MEDIUM' ? '#ed8936' : '#38a169'}`
+                                                }}>
+                                                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px'}}>
+                                                        <div style={{fontWeight: '600', color: '#2d3748'}}>{vuln.issue}</div>
+                                                        <span style={{
+                                                            background: vuln.risk === 'CRITICAL' ? '#e53e3e' : vuln.risk === 'HIGH' ? '#f56565' : vuln.risk === 'MEDIUM' ? '#ed8936' : '#38a169',
+                                                            color: 'white',
+                                                            padding: '2px 8px',
+                                                            borderRadius: '12px',
+                                                            fontSize: '0.8rem',
+                                                            fontWeight: '600'
+                                                        }}>
+                                                            {vuln.risk}
+                                                        </span>
+                                                    </div>
+                                                    <div style={{fontSize: '0.9rem', color: '#64748b', marginBottom: '5px'}}>
+                                                        Device: {vuln.deviceType} ({vuln.device})
+                                                    </div>
+                                                    {vuln.port && (
+                                                        <div style={{fontSize: '0.9rem', color: '#64748b', marginBottom: '5px'}}>
+                                                            Port: {vuln.port}
+                                                        </div>
+                                                    )}
+                                                    {vuln.cve && vuln.cve !== 'N/A' && (
+                                                        <div style={{fontSize: '0.85rem', color: '#4a5568', fontFamily: 'monospace'}}>
+                                                            CVE: {vuln.cve}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                            {securityAssessment.vulnerabilities.length > 8 && (
+                                                <div style={{textAlign: 'center', padding: '10px', color: '#64748b'}}>
+                                                    ... and {securityAssessment.vulnerabilities.length - 8} more issues
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                </div>
+                                ) : (
+                                    <div style={{background: '#f0fff4', border: '2px solid #9ae6b4', borderRadius: '15px', padding: '30px', marginBottom: '30px'}}>
+                                        <div style={{color: '#38a169', fontWeight: '600', fontSize: '1.2rem', textAlign: 'center'}}>
+                                            ✅ No major security vulnerabilities detected
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {securityAssessment && securityAssessment.recommendations.length > 0 && (
+                                    <div style={{background: '#e2e8f0', borderRadius: '15px', padding: '25px'}}>
+                                        <div style={{fontWeight: '700', fontSize: '1.1rem', color: '#2d3748', marginBottom: '15px'}}>
+                                            🛠️ Security Recommendations
+                                        </div>
+                                        {securityAssessment.recommendations.map((rec, index) => (
+                                            <div key={index} style={{
+                                                background: 'white',
+                                                margin: '8px 0',
+                                                padding: '12px',
+                                                borderRadius: '8px',
+                                                borderLeft: `3px solid ${rec.priority === 'CRITICAL' ? '#e53e3e' : rec.priority === 'HIGH' ? '#f56565' : rec.priority === 'MEDIUM' ? '#ed8936' : '#38a169'}`
+                                            }}>
+                                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                                    <div style={{fontWeight: '600', color: '#2d3748'}}>{rec.action}</div>
+                                                    <span style={{
+                                                        background: rec.priority === 'CRITICAL' ? '#e53e3e' : rec.priority === 'HIGH' ? '#f56565' : rec.priority === 'MEDIUM' ? '#ed8936' : '#38a169',
+                                                        color: 'white',
+                                                        padding: '1px 6px',
+                                                        borderRadius: '10px',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: '600'
+                                                    }}>
+                                                        {rec.priority}
+                                                    </span>
+                                                </div>
+                                                <div style={{fontSize: '0.9rem', color: '#64748b', marginTop: '5px'}}>
+                                                    {rec.reason}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </main>

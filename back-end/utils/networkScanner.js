@@ -1,7 +1,47 @@
 const nmap = require('node-nmap');
 const os = require('os');
 
-// Enhanced device fingerprinting database (keeping your original working patterns)
+// Vulnerability Assessment Functions
+const VULNERABILITY_CHECKS = {
+    // Dangerous open ports
+    criticalPorts: {
+        21: { risk: 'HIGH', issue: 'FTP server - often unencrypted', cve: 'CVE-2019-12815' },
+        23: { risk: 'CRITICAL', issue: 'Telnet - unencrypted remote access', cve: 'CVE-2020-15778' },
+        135: { risk: 'HIGH', issue: 'Windows RPC - vulnerable to attacks', cve: 'CVE-2022-26937' },
+        139: { risk: 'MEDIUM', issue: 'NetBIOS - information disclosure', cve: 'CVE-2021-31166' },
+        445: { risk: 'HIGH', issue: 'SMB - vulnerable to ransomware', cve: 'CVE-2020-0796' },
+        1433: { risk: 'HIGH', issue: 'SQL Server - data exposure risk', cve: 'CVE-2021-1636' },
+        3306: { risk: 'HIGH', issue: 'MySQL database exposed', cve: 'CVE-2021-2471' },
+        3389: { risk: 'MEDIUM', issue: 'RDP - brute force target', cve: 'CVE-2019-0708' },
+        5432: { risk: 'HIGH', issue: 'PostgreSQL database exposed', cve: 'CVE-2021-23222' },
+        5900: { risk: 'MEDIUM', issue: 'VNC - weak authentication', cve: 'CVE-2020-14002' }
+    }
+};
+
+const DEVICE_VULNERABILITIES = {
+    'Brother Printer': [
+        { risk: 'MEDIUM', issue: 'Default SNMP community string', cve: 'CVE-2021-3114' },
+        { risk: 'LOW', issue: 'Web interface information disclosure', cve: 'CVE-2020-5655' }
+    ],
+    'HP Printer': [
+        { risk: 'HIGH', issue: 'Buffer overflow in web interface', cve: 'CVE-2021-39237' },
+        { risk: 'MEDIUM', issue: 'Authentication bypass', cve: 'CVE-2021-39238' }
+    ],
+    'Hikvision Security Camera': [
+        { risk: 'CRITICAL', issue: 'Command injection vulnerability', cve: 'CVE-2021-36260' },
+        { risk: 'HIGH', issue: 'Authentication bypass', cve: 'CVE-2020-25078' }
+    ],
+    'NETGEAR Router': [
+        { risk: 'CRITICAL', issue: 'Pre-auth RCE vulnerability', cve: 'CVE-2021-34991' },
+        { risk: 'HIGH', issue: 'Password disclosure', cve: 'CVE-2021-34992' }
+    ],
+    'Network Equipment': [
+        { risk: 'HIGH', issue: 'Default credentials may be in use', cve: 'N/A' },
+        { risk: 'MEDIUM', issue: 'Firmware may be outdated', cve: 'N/A' }
+    ]
+};
+
+// Enhanced device fingerprinting database
 const DEVICE_SIGNATURES = {
     // Nintendo devices
     nintendo: {
@@ -75,7 +115,7 @@ const DEVICE_SIGNATURES = {
     }
 };
 
-// Enhanced MAC address vendor database (keeping your original + adding more)
+// Enhanced MAC address vendor database
 const MAC_VENDORS = {
     "00:0C:F1": "Intel Corporation",
     "00:16:CB": "Apple Inc",
@@ -134,156 +174,20 @@ const MAC_VENDORS = {
     "F0:D2:F1": "Amazon Technologies Inc",
     "50:DC:E7": "Amazon Technologies Inc",
     
-    // Additional vendors for better detection - EXPANDED 2025 DATABASE
-    "B8:27:EB": "Raspberry Pi Trading",
-    "DC:A6:32": "Raspberry Pi Trading",
-    "E4:5F:01": "Raspberry Pi Trading",
-    "52:54:00": "QEMU Virtual Network",
-    "08:00:27": "Oracle VirtualBox",
-    "00:0C:29": "VMware Inc",
-    "00:50:56": "VMware Inc",
-    "18:B4:30": "Nest Labs Inc",
-    "64:16:66": "Nest Labs Inc",
-    "00:07:7D": "Roku Inc",
-    "DC:3A:5E": "Roku Inc",
-    "00:12:12": "Hikvision",
-    "BC:AD:28": "Hikvision",
-    "00:23:8B": "Dahua Technology",
-    
-    // IoT Device Manufacturers (the ones you're seeing as Unknown)
+    // IoT Device Manufacturers
     "C4:4E:AC": "Shenzhen Shiningworth Technology",
     "F4:B8:5E": "Texas Instruments",
     "EC:6C:9A": "Arcadyan",
     "C0:B5:D7": "Chongqing Fugui Electronics", 
     "C0:E7:BF": "Sichuan AI-Link Technology",
     "00:80:92": "Silex Technology",
-    
-    // More IoT and embedded system manufacturers
-    "24:0A:C4": "Espressif Inc",
-    "CC:50:E3": "Espressif Inc", 
-    "84:0D:8E": "Espressif Inc",
-    "30:AE:A4": "Espressif Inc",
-    "A4:CF:12": "Espressif Inc",
-    "B4:E6:2D": "Espressif Inc",
-    "DC:4F:22": "Espressif Inc",
-    "E8:DB:84": "Espressif Inc",
-    "EC:62:60": "Espressif Inc",
-    "5C:CF:7F": "Espressif Inc",
-    
-    // Texas Instruments variations (very common in IoT)
-    "00:12:4B": "Texas Instruments",
-    "04:79:70": "Texas Instruments", 
-    "68:C9:0B": "Texas Instruments",
-    "88:C2:55": "Texas Instruments",
-    "B0:B4:48": "Texas Instruments",
-    "F0:F0:0C": "Texas Instruments",
-    "F4:B8:5E": "Texas Instruments",
-    
-    // Arcadyan (router/gateway manufacturer)
-    "00:1D:19": "Arcadyan Corporation",
-    "00:22:2D": "Arcadyan Corporation", 
-    "00:8C:54": "Arcadyan Corporation",
-    "88:25:2C": "Arcadyan Corporation",
-    "EC:6C:9A": "Arcadyan Corporation",
-    "F8:8E:85": "Arcadyan Corporation",
-    
-    // Chinese IoT manufacturers
-    "8C:AA:B5": "Shenzhen Ogemray Technology",
-    "C8:2B:96": "Shenzhen Ogemray Technology", 
-    "20:6B:E7": "Hangzhou Hikvision",
-    "C0:B5:D7": "Chongqing Fugui Electronics",
-    "C0:E7:BF": "Sichuan AI-Link Technology",
-    "00:80:92": "Silex Technology",
-    "C4:4E:AC": "Shenzhen Shiningworth Technology",
-    
-    // More common device manufacturers
-    "6C:AD:F8": "AzureWave Technology Inc",
-    "90:84:0D": "AzureWave Technology Inc",
-    "00:E0:4C": "Realtek Semiconductor Co",
+    "B8:27:EB": "Raspberry Pi Trading",
+    "DC:A6:32": "Raspberry Pi Trading",
+    "E4:5F:01": "Raspberry Pi Trading",
     "52:54:00": "QEMU Virtual Network",
     "08:00:27": "Oracle VirtualBox",
-    "00:25:9C": "Cisco Systems Inc",
-    "00:26:CA": "Cisco Systems Inc",
-    "00:40:96": "Cisco Systems Inc",
-    "14:69:E2": "Cisco Systems Inc",
-    "28:C7:CE": "Cisco Systems Inc",
-    "3C:CE:73": "Cisco Systems Inc",
-    "68:BD:AB": "Cisco Systems Inc",
-    "7C:95:F3": "Cisco Systems Inc",
-    "A0:23:9F": "Cisco Systems Inc",
-    "C8:00:84": "Cisco Systems Inc",
-    
-    // Mediatek (common in IoT devices)
-    "14:DD:A9": "MediaTek Inc",
-    "BC:F5:AC": "MediaTek Inc",
-    "DC:EF:CA": "MediaTek Inc",
-    "E0:19:1D": "MediaTek Inc",
-    
-    // Broadcom (WiFi chips)
-    "00:10:18": "Broadcom Corporation",
-    "00:90:4C": "Broadcom Corporation",
-    "B4:99:BA": "Broadcom Corporation",
-    "CC:B2:55": "Broadcom Corporation",
-    
-    // Qualcomm (mobile devices)
-    "00:0A:F5": "Qualcomm Inc",
-    "30:39:26": "Qualcomm Inc",
-    "58:A2:B5": "Qualcomm Inc",
-    "98:5F:D3": "Qualcomm Inc",
-    
-    // More smart device manufacturers
-    "F4:F5:D8": "Google Inc",
-    "AC:BC:32": "Google Inc",
-    "F8:8F:CA": "Google Inc",
-    "CC:50:E3": "Google Inc",
-    "F0:EF:86": "Google Inc",
-    "DA:A1:19": "Google Inc",
-    
-    // Additional Apple variations
-    "8C:85:90": "Apple Inc",
-    "A4:83:E7": "Apple Inc",
-    "BC:52:B7": "Apple Inc",
-    "F0:18:98": "Apple Inc",
-    "F4:37:B7": "Apple Inc",
-    
-    // TP-Link variations
-    "50:C7:BF": "TP-LINK Technologies Co Ltd",
-    "A4:2B:8C": "TP-LINK Technologies Co Ltd",
-    "C0:25:E9": "TP-LINK Technologies Co Ltd",
-    "E8:DE:27": "TP-LINK Technologies Co Ltd",
-    "EC:08:6B": "TP-LINK Technologies Co Ltd",
-    
-    // D-Link
-    "00:05:5D": "D-Link Corporation",
-    "00:0F:3D": "D-Link Corporation",
-    "00:13:46": "D-Link Corporation",
-    "00:17:9A": "D-Link Corporation",
-    "00:19:5B": "D-Link Corporation",
-    "00:1B:11": "D-Link Corporation",
-    "00:1C:F0": "D-Link Corporation",
-    "00:1E:58": "D-Link Corporation",
-    "00:21:91": "D-Link Corporation",
-    "00:22:B0": "D-Link Corporation",
-    "00:24:01": "D-Link Corporation",
-    "00:26:5A": "D-Link Corporation",
-    "14:D6:4D": "D-Link Corporation",
-    "1C:7E:E5": "D-Link Corporation",
-    "20:CF:30": "D-Link Corporation",
-    "24:05:0F": "D-Link Corporation",
-    "28:10:7B": "D-Link Corporation",
-    "2C:B0:5D": "D-Link Corporation",
-    "34:08:04": "D-Link Corporation",
-    "40:61:86": "D-Link Corporation",
-    "54:B8:0A": "D-Link Corporation",
-    "5C:F4:AB": "D-Link Corporation",
-    "60:E3:27": "D-Link Corporation",
-    "78:54:2E": "D-Link Corporation",
-    "84:C9:B2": "D-Link Corporation",
-    "90:94:E4": "D-Link Corporation",
-    "C0:A0:BB": "D-Link Corporation",
-    "CC:B2:55": "D-Link Corporation",
-    "E4:6F:13": "D-Link Corporation",
-    "F0:7D:68": "D-Link Corporation"
+    "00:0C:29": "VMware Inc",
+    "00:50:56": "VMware Inc"
 };
 
 // Service identification patterns
@@ -345,6 +249,216 @@ const OS_PATTERNS = {
         name: "Android"
     }
 };
+
+// Security Assessment Function
+function performSecurityAssessment(devices) {
+    console.log('🔒 Starting security assessment...');
+    
+    let totalScore = 0;
+    let allVulnerabilities = [];
+    let deviceAssessments = [];
+    
+    devices.forEach((device, index) => {
+        console.log('🔍 Security analysis for device ' + (index + 1) + ': ' + device.ip);
+        
+        let deviceScore = 100;
+        let deviceVulns = [];
+        
+        // Check for dangerous ports
+        device.openPorts.forEach(port => {
+            if (VULNERABILITY_CHECKS.criticalPorts[port]) {
+                const vuln = VULNERABILITY_CHECKS.criticalPorts[port];
+                deviceVulns.push({
+                    device: device.ip,
+                    deviceType: device.deviceType,
+                    port: port,
+                    risk: vuln.risk,
+                    issue: vuln.issue,
+                    cve: vuln.cve,
+                    type: 'PORT_VULNERABILITY'
+                });
+                
+                // Deduct points based on risk
+                switch(vuln.risk) {
+                    case 'CRITICAL': deviceScore -= 25; break;
+                    case 'HIGH': deviceScore -= 15; break;
+                    case 'MEDIUM': deviceScore -= 8; break;
+                    case 'LOW': deviceScore -= 3; break;
+                }
+            }
+        });
+        
+        // Check for device-specific vulnerabilities
+        if (DEVICE_VULNERABILITIES[device.deviceType]) {
+            DEVICE_VULNERABILITIES[device.deviceType].forEach(vuln => {
+                deviceVulns.push({
+                    device: device.ip,
+                    deviceType: device.deviceType,
+                    risk: vuln.risk,
+                    issue: vuln.issue,
+                    cve: vuln.cve,
+                    type: 'DEVICE_VULNERABILITY'
+                });
+                
+                switch(vuln.risk) {
+                    case 'CRITICAL': deviceScore -= 20; break;
+                    case 'HIGH': deviceScore -= 12; break;
+                    case 'MEDIUM': deviceScore -= 6; break;
+                    case 'LOW': deviceScore -= 2; break;
+                }
+            });
+        }
+        
+        // Security bonuses and penalties
+        if (device.openPorts.length === 0) {
+            deviceScore += 5; // Bonus for no open ports
+        } else if (device.openPorts.length > 10) {
+            deviceScore -= 10; // Penalty for too many ports
+            deviceVulns.push({
+                device: device.ip,
+                deviceType: device.deviceType,
+                risk: 'MEDIUM',
+                issue: 'Too many open ports (' + device.openPorts.length + ')',
+                description: 'Large attack surface increases vulnerability',
+                type: 'CONFIGURATION'
+            });
+        }
+        
+        // Unknown device penalty
+        if (device.deviceType === 'Unknown Device' || device.confidence < 30) {
+            deviceScore -= 8;
+            deviceVulns.push({
+                device: device.ip,
+                deviceType: device.deviceType,
+                risk: 'MEDIUM',
+                issue: 'Unidentified device on network',
+                description: 'Unknown devices may pose security risks',
+                type: 'IDENTIFICATION'
+            });
+        }
+        
+        // Apply security criteria
+        if (device.openPorts.includes(443)) deviceScore += 3; // HTTPS bonus
+        if (device.openPorts.includes(22)) deviceScore += 2; // SSH bonus
+        if (device.openPorts.includes(23)) deviceScore -= 15; // Telnet penalty
+        if (device.openPorts.includes(21)) deviceScore -= 10; // FTP penalty
+        
+        deviceScore = Math.max(0, Math.min(100, deviceScore));
+        
+        const deviceAssessment = {
+            device: device.ip,
+            deviceType: device.deviceType,
+            score: deviceScore,
+            vulnerabilities: deviceVulns,
+            riskLevel: deviceScore >= 80 ? 'LOW' : deviceScore >= 60 ? 'MEDIUM' : deviceScore >= 40 ? 'HIGH' : 'CRITICAL'
+        };
+        
+        deviceAssessments.push(deviceAssessment);
+        allVulnerabilities = allVulnerabilities.concat(deviceVulns);
+        totalScore += deviceScore;
+        
+        console.log('   └─ Device Score: ' + deviceScore + '/100');
+        console.log('   └─ Vulnerabilities: ' + deviceVulns.length);
+    });
+    
+    // Calculate network-wide score
+    const averageScore = devices.length > 0 ? Math.round(totalScore / devices.length) : 0;
+    
+    // Apply network penalties
+    let networkPenalties = 0;
+    const criticalVulns = allVulnerabilities.filter(v => v.risk === 'CRITICAL');
+    const highVulns = allVulnerabilities.filter(v => v.risk === 'HIGH');
+    
+    networkPenalties += criticalVulns.length * 5;
+    networkPenalties += highVulns.length * 2;
+    
+    const finalScore = Math.max(0, averageScore - networkPenalties);
+    
+    // Generate recommendations
+    const recommendations = generateRecommendations(allVulnerabilities, devices);
+    
+    console.log('🎯 Final Network Security Score: ' + finalScore + '/100');
+    
+    return {
+        overallScore: finalScore,
+        averageDeviceScore: averageScore,
+        totalVulnerabilities: allVulnerabilities.length,
+        criticalVulnerabilities: criticalVulns.length,
+        highVulnerabilities: highVulns.length,
+        vulnerabilities: allVulnerabilities,
+        recommendations: recommendations,
+        deviceAssessments: deviceAssessments,
+        networkPenalties: networkPenalties
+    };
+}
+
+function generateRecommendations(vulnerabilities, devices) {
+    let recommendations = [];
+    
+    // Critical vulnerabilities
+    const criticalVulns = vulnerabilities.filter(v => v.risk === 'CRITICAL');
+    criticalVulns.forEach(vuln => {
+        recommendations.push({
+            priority: 'CRITICAL',
+            action: 'Immediately address ' + vuln.issue + ' on ' + vuln.deviceType + ' (' + vuln.device + ')',
+            reason: vuln.issue,
+            cve: vuln.cve
+        });
+    });
+    
+    // Telnet detection
+    const telnetDevices = vulnerabilities.filter(v => v.port === 23);
+    if (telnetDevices.length > 0) {
+        recommendations.push({
+            priority: 'HIGH',
+            action: 'Disable Telnet and use SSH instead on ' + telnetDevices.length + ' device(s)',
+            reason: 'Telnet sends passwords in plain text'
+        });
+    }
+    
+    // FTP detection  
+    const ftpDevices = vulnerabilities.filter(v => v.port === 21);
+    if (ftpDevices.length > 0) {
+        recommendations.push({
+            priority: 'MEDIUM',
+            action: 'Replace FTP with SFTP on ' + ftpDevices.length + ' device(s)',
+            reason: 'FTP is unencrypted and vulnerable'
+        });
+    }
+    
+    // Database exposure
+    const dbPorts = [1433, 3306, 5432];
+    const exposedDbs = vulnerabilities.filter(v => dbPorts.includes(v.port));
+    if (exposedDbs.length > 0) {
+        recommendations.push({
+            priority: 'HIGH',
+            action: 'Secure or firewall exposed databases',
+            reason: 'Database servers should not be directly accessible'
+        });
+    }
+    
+    // Unknown devices
+    const unknownDevices = devices.filter(d => d.deviceType === 'Unknown Device');
+    if (unknownDevices.length > 0) {
+        recommendations.push({
+            priority: 'MEDIUM',
+            action: 'Identify and inventory ' + unknownDevices.length + ' unknown device(s)',
+            reason: 'Unidentified devices pose potential security risks'
+        });
+    }
+    
+    // High-risk devices
+    const highRiskDevices = devices.filter(d => d.openPorts && d.openPorts.length > 5);
+    if (highRiskDevices.length > 0) {
+        recommendations.push({
+            priority: 'LOW',
+            action: 'Review open ports on ' + highRiskDevices.length + ' device(s)',
+            reason: 'Reduce attack surface by closing unnecessary ports'
+        });
+    }
+    
+    return recommendations.slice(0, 6); // Top 6 recommendations
+}
 
 // Get current network information
 function getNetworkInfo() {
@@ -413,7 +527,7 @@ function getVendorFromMAC(mac) {
     return 'Unknown Vendor';
 }
 
-// Enhanced device identification (keeping your working logic)
+// Enhanced device identification
 function identifyDevice(device) {
     const vendor = device.vendor || 'Unknown';
     const hostname = device.hostname || 'Unknown';
@@ -424,7 +538,7 @@ function identifyDevice(device) {
     const enhancedVendor = getVendorFromMAC(mac);
     const finalVendor = vendor !== 'Unknown' ? vendor : enhancedVendor;
     
-    // Try to identify specific device type using your original working logic
+    // Try to identify specific device type using signature patterns
     let deviceType = 'Unknown Device';
     let confidence = 0;
     
@@ -459,11 +573,10 @@ function identifyDevice(device) {
         }
     }
     
-    // Additional hostname-based detection with more patterns
+    // Enhanced hostname-based detection
     if (hostname && hostname !== 'Unknown') {
         const lowerHostname = hostname.toLowerCase();
         
-        // Simple hostname checks - expanded patterns
         if (lowerHostname.includes('nintendo') && deviceType === 'Unknown Device') {
             deviceType = 'Nintendo Device';
             confidence = 75;
@@ -479,39 +592,6 @@ function identifyDevice(device) {
         } else if (lowerHostname.includes('android') && deviceType === 'Unknown Device') {
             deviceType = 'Android Device';
             confidence = 75;
-        } else if (lowerHostname.includes('windows') && deviceType === 'Unknown Device') {
-            deviceType = 'Windows PC';
-            confidence = 70;
-        } else if (lowerHostname.includes('desktop') && deviceType === 'Unknown Device') {
-            deviceType = 'Desktop Computer';
-            confidence = 70;
-        } else if (lowerHostname.includes('laptop') && deviceType === 'Unknown Device') {
-            deviceType = 'Laptop Computer';
-            confidence = 70;
-        } else if (lowerHostname.includes('raspberry') || lowerHostname.includes('pi') && deviceType === 'Unknown Device') {
-            deviceType = 'Raspberry Pi';
-            confidence = 85;
-        } else if (lowerHostname.includes('esp32') || lowerHostname.includes('esp8266') && deviceType === 'Unknown Device') {
-            deviceType = 'ESP32/ESP8266 Device';
-            confidence = 90;
-        } else if (lowerHostname.includes('ubuntu') && deviceType === 'Unknown Device') {
-            deviceType = 'Ubuntu Linux';
-            confidence = 75;
-        } else if (lowerHostname.includes('debian') && deviceType === 'Unknown Device') {
-            deviceType = 'Debian Linux';
-            confidence = 75;
-        } else if (lowerHostname.includes('router') && deviceType === 'Unknown Device') {
-            deviceType = 'Network Router';
-            confidence = 80;
-        } else if (lowerHostname.includes('switch') && deviceType === 'Unknown Device') {
-            deviceType = 'Network Switch';
-            confidence = 80;
-        } else if (lowerHostname.includes('camera') && deviceType === 'Unknown Device') {
-            deviceType = 'IP Camera';
-            confidence = 75;
-        } else if (lowerHostname.includes('printer') && deviceType === 'Unknown Device') {
-            deviceType = 'Network Printer';
-            confidence = 80;
         }
     }
     
@@ -519,93 +599,6 @@ function identifyDevice(device) {
     if (deviceType === 'Unknown Device' && finalVendor !== 'Unknown Vendor') {
         const vendorLower = finalVendor.toLowerCase();
         
-        if (vendorLower.includes('apple')) {
-            if (openPorts.includes(62078)) deviceType = 'iPhone/iPad';
-            else if (openPorts.includes(22) && openPorts.includes(548)) deviceType = 'Mac Computer';
-            else if (openPorts.includes(3689)) deviceType = 'Apple TV';
-            else deviceType = 'Apple Device';
-            confidence = 60;
-        } else if (vendorLower.includes('samsung')) {
-            if (openPorts.includes(8001) || openPorts.includes(8002)) deviceType = 'Samsung Smart TV';
-            else deviceType = 'Samsung Device';
-            confidence = 55;
-        } else if (vendorLower.includes('lg')) {
-            if (openPorts.includes(3000) || openPorts.includes(3001)) deviceType = 'LG Smart TV';
-            else deviceType = 'LG Device';
-            confidence = 55;
-        } else if (vendorLower.includes('nintendo')) {
-            deviceType = 'Nintendo Gaming Device';
-            confidence = 70;
-        } else if (vendorLower.includes('brother') || vendorLower.includes('hp') || vendorLower.includes('canon') || vendorLower.includes('epson')) {
-            deviceType = 'Network Printer';
-            confidence = 65;
-        } else if (vendorLower.includes('raspberry')) {
-            deviceType = 'Raspberry Pi';
-            confidence = 85;
-        } else if (vendorLower.includes('intel')) {
-            if (openPorts.includes(22)) deviceType = 'Intel-based Computer';
-            else deviceType = 'Intel Device';
-            confidence = 45;
-        } else if (vendorLower.includes('cisco') || vendorLower.includes('netgear') || vendorLower.includes('linksys') || vendorLower.includes('asus') || vendorLower.includes('d-link') || vendorLower.includes('tp-link')) {
-            deviceType = 'Network Equipment';
-            confidence = 70;
-        } else if (vendorLower.includes('microsoft')) {
-            if (openPorts.includes(3389)) deviceType = 'Windows Computer';
-            else deviceType = 'Microsoft Device';
-            confidence = 60;
-        } else if (vendorLower.includes('sony')) {
-            if (openPorts.includes(80) && openPorts.includes(443)) deviceType = 'Sony Smart Device';
-            else deviceType = 'Sony Device';
-            confidence = 55;
-        } else if (vendorLower.includes('google') || vendorLower.includes('nest')) {
-            if (openPorts.includes(8008) || openPorts.includes(8009)) deviceType = 'Google Chromecast/Nest';
-            else deviceType = 'Google Device';
-            confidence = 60;
-        } else if (vendorLower.includes('amazon')) {
-            if (openPorts.includes(8080)) deviceType = 'Amazon Fire TV';
-            else deviceType = 'Amazon Device';
-            confidence = 60;
-        } else if (vendorLower.includes('roku')) {
-            deviceType = 'Roku Streaming Device';
-            confidence = 80;
-        } else if (vendorLower.includes('hikvision') || vendorLower.includes('dahua')) {
-            deviceType = 'Security Camera';
-            confidence = 85;
-        } else if (vendorLower.includes('mediatek') || vendorLower.includes('realtek') || vendorLower.includes('broadcom') || vendorLower.includes('qualcomm')) {
-            deviceType = 'IoT Device (Chipset: ' + finalVendor + ')';
-            confidence = 50;
-        } else if (vendorLower.includes('virtual') || vendorLower.includes('qemu') || vendorLower.includes('vmware')) {
-            deviceType = 'Virtual Machine';
-            confidence = 90;
-        } else if (vendorLower.includes('shenzhen') || vendorLower.includes('shiningworth')) {
-            deviceType = 'Smart Home Device (Shenzhen Mfg)';
-            confidence = 70;
-        } else if (vendorLower.includes('texas instruments')) {
-            deviceType = 'IoT Device (TI Chipset)';
-            confidence = 65;
-        } else if (vendorLower.includes('arcadyan')) {
-            deviceType = 'Router/Gateway Device';
-            confidence = 80;
-        } else if (vendorLower.includes('chongqing') || vendorLower.includes('fugui')) {
-            deviceType = 'Smart Device (Chinese Mfg)';
-            confidence = 65;
-        } else if (vendorLower.includes('sichuan') || vendorLower.includes('ai-link')) {
-            deviceType = 'IoT Smart Device';
-            confidence = 70;
-        } else if (vendorLower.includes('silex')) {
-            deviceType = 'Wireless Module Device';
-            confidence = 75;
-        } else if (vendorLower.includes('espressif')) {
-            deviceType = 'ESP32/ESP8266 IoT Device';
-            confidence = 85;
-        }
-    }
-    
-    // Special handling for devices with no open ports (common in IoT devices)
-    if (openPorts.length === 0 && deviceType === 'Unknown Device' && finalVendor !== 'Unknown Vendor') {
-        const vendorLower = finalVendor.toLowerCase();
-        
-        // Many IoT devices don't expose ports but can still be identified by vendor
         if (vendorLower.includes('shenzhen') || vendorLower.includes('shiningworth')) {
             deviceType = 'Smart Home Device (Secured)';
             confidence = 65;
@@ -615,75 +608,21 @@ function identifyDevice(device) {
         } else if (vendorLower.includes('arcadyan')) {
             deviceType = 'Network Gateway (Secured)';
             confidence = 70;
-        } else if (vendorLower.includes('chongqing') || vendorLower.includes('fugui')) {
-            deviceType = 'IoT Device (Secured)';
-            confidence = 60;
-        } else if (vendorLower.includes('sichuan') || vendorLower.includes('ai-link')) {
-            deviceType = 'Smart IoT Device (Secured)';
-            confidence = 65;
-        } else if (vendorLower.includes('silex')) {
-            deviceType = 'Wireless Module (Secured)';
-            confidence = 70;
-        } else if (vendorLower.includes('espressif')) {
-            deviceType = 'ESP32/ESP8266 Device (Secured)';
-            confidence = 80;
-        } else if (vendorLower.includes('mediatek') || vendorLower.includes('realtek') || vendorLower.includes('broadcom')) {
-            deviceType = 'IoT Device (Secured Chipset)';
-            confidence = 55;
         } else if (vendorLower.includes('apple')) {
-            deviceType = 'Apple Device (Secured)';
-            confidence = 55;
-        } else if (vendorLower.includes('samsung')) {
-            deviceType = 'Samsung Device (Secured)';
-            confidence = 55;
-        } else if (vendorLower.includes('amazon')) {
-            deviceType = 'Amazon Device (Secured)';
+            if (openPorts.includes(62078)) deviceType = 'iPhone/iPad';
+            else if (openPorts.includes(22) && openPorts.includes(548)) deviceType = 'Mac Computer';
+            else if (openPorts.includes(3689)) deviceType = 'Apple TV';
+            else deviceType = 'Apple Device';
             confidence = 60;
-        } else if (vendorLower.includes('google')) {
-            deviceType = 'Google Device (Secured)';
-            confidence = 60;
-        } else {
-            // Generic IoT device for any known vendor with no ports
-            deviceType = 'IoT Device (Secured/Sleeping)';
-            confidence = 45;
-        }
-    }
-    
-    // Port-based guessing for completely unknown devices
-    if (deviceType === 'Unknown Device' && openPorts.length > 0) {
-        if (openPorts.includes(631) || openPorts.includes(9100)) {
+        } else if (vendorLower.includes('brother') || vendorLower.includes('hp') || vendorLower.includes('canon') || vendorLower.includes('epson')) {
             deviceType = 'Network Printer';
-            confidence = 60;
-        } else if (openPorts.includes(8008) || openPorts.includes(8009)) {
-            deviceType = 'Chromecast/Media Device';
-            confidence = 55;
-        } else if (openPorts.includes(22) && openPorts.length === 1) {
-            deviceType = 'SSH Server/Linux Device';
-            confidence = 40;
-        } else if (openPorts.includes(80) && openPorts.includes(443) && openPorts.length === 2) {
-            deviceType = 'Web Server/IoT Device';
-            confidence = 35;
-        } else if (openPorts.includes(1900)) {
-            deviceType = 'UPnP Device';
-            confidence = 50;
-        } else if (openPorts.includes(554)) {
-            deviceType = 'Security Camera/RTSP Device';
-            confidence = 60;
-        } else if (openPorts.includes(8080)) {
-            deviceType = 'Web Service/IoT Device';
-            confidence = 35;
-        } else if (openPorts.includes(3389)) {
-            deviceType = 'Windows Computer (RDP)';
-            confidence = 70;
-        } else if (openPorts.includes(5900)) {
-            deviceType = 'VNC Server';
             confidence = 65;
-        } else if (openPorts.includes(8001) || openPorts.includes(8002)) {
-            deviceType = 'Smart TV';
-            confidence = 50;
-        } else if (openPorts.includes(3000)) {
-            deviceType = 'Smart TV (LG webOS)';
-            confidence = 60;
+        } else if (vendorLower.includes('raspberry')) {
+            deviceType = 'Raspberry Pi';
+            confidence = 85;
+        } else if (vendorLower.includes('nintendo')) {
+            deviceType = 'Nintendo Gaming Device';
+            confidence = 70;
         }
     }
     
@@ -749,16 +688,16 @@ function testNmap() {
     });
 }
 
-// Enhanced network scanning with better compatibility
+// Main scan network function
 function scanNetwork(subnet) {
     return new Promise((resolve, reject) => {
         console.log('🔍 Starting enhanced network scan of: ' + subnet);
         
         // First try enhanced scan with QuickScan + port detection
         enhancedQuickScan(subnet)
-            .then(devices => {
-                console.log('✅ Enhanced scan completed! Found ' + devices.length + ' devices');
-                resolve(devices);
+            .then(result => {
+                console.log('✅ Enhanced scan completed! Found ' + result.devices.length + ' devices');
+                resolve(result);
             })
             .catch(error => {
                 console.error('❌ Enhanced scan failed, trying fallback:', error.message);
@@ -794,13 +733,30 @@ function enhancedQuickScan(subnet) {
                         return enhancedDevice;
                     });
                     
-                    resolve(finalDevices);
+                    // Perform comprehensive security assessment
+                    console.log('🔒 Running security vulnerability assessment...');
+                    const securityAssessment = performSecurityAssessment(finalDevices);
+                    
+                    // Return properly structured result
+                    const result = {
+                        devices: finalDevices,
+                        securityAssessment: securityAssessment
+                    };
+                    
+                    resolve(result);
                 })
                 .catch(error => {
                     console.error('❌ Device enhancement failed:', error);
                     // Still return basic devices with enhancement
                     const basicDevices = data.map(device => identifyDevice(device));
-                    resolve(basicDevices);
+                    
+                    // Perform security assessment on basic devices too
+                    const securityAssessment = performSecurityAssessment(basicDevices);
+                    
+                    resolve({
+                        devices: basicDevices,
+                        securityAssessment: securityAssessment
+                    });
                 });
         });
         
@@ -863,7 +819,13 @@ function fallbackBasicScan(subnet, resolve, reject) {
             return enhancedDevice;
         });
         
-        resolve(devices);
+        // Perform security assessment
+        const securityAssessment = performSecurityAssessment(devices);
+        
+        resolve({
+            devices: devices,
+            securityAssessment: securityAssessment
+        });
     });
     
     quickscan.on('error', function(error) {
