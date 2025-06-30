@@ -696,7 +696,155 @@
             margin-bottom: 10px;
         }
 
-        @media (max-width: 768px) {
+        /* Enhanced Security Display Styles */
+        .ssl-info-section {
+            background: #f0f9ff;
+            border: 2px solid #bae6fd;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .ssl-info-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #0369a1;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ssl-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0;
+        }
+
+        .ssl-valid {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .ssl-warning {
+            color: #d97706;
+            font-weight: 600;
+        }
+
+        .ssl-error {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .credential-section {
+            background: #fef3c7;
+            border: 2px solid #fbbf24;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .credential-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .credential-vulnerable {
+            background: #fee2e2;
+            border: 2px solid #fca5a5;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 8px 0;
+        }
+
+        .credential-item {
+            color: #991b1b;
+            font-weight: 600;
+            font-family: monospace;
+        }
+
+        .security-metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .security-metric-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .metric-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .metric-description {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+
+        .enhanced-port-info {
+            background: #f9fafb;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+        }
+
+        .port-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .port-title {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .risk-indicator {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .risk-critical {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .risk-high {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .risk-medium {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .risk-low {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        @media (max-width: 900px) {
             .header {
                 flex-direction: column;
                 gap: 20px;
@@ -1164,6 +1312,10 @@
                     <header className="header">
                         <div className="logo-section">
                             <img src="logo.png" alt="DeviceScout Logo" className="logo-image" />
+                            <div className="logo-text">
+                                <div className="logo-title">DeviceScout</div>
+                                <div className="logo-subtitle">Network Security Made Simple</div>
+                            </div>
                         </div>
                         
                         {currentPage !== 'start' && (
@@ -1593,25 +1745,106 @@
                                     {/* Open Ports Section */}
                                     {selectedDevice.openPorts && selectedDevice.openPorts.length > 0 && (
                                         <div style={{marginTop: '30px'}}>
-                                            <h3 className="section-title">Open Ports & Services</h3>
-                                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '15px', marginTop: '15px'}}>
-                                                {selectedDevice.openPorts.map((port, index) => (
-                                                    <div key={index} style={{
-                                                        background: 'white',
-                                                        padding: '15px',
-                                                        borderRadius: '10px',
-                                                        border: '2px solid #e2e8f0',
-                                                        textAlign: 'center'
-                                                    }}>
-                                                        <div style={{fontSize: '1.5rem', fontWeight: '700', color: '#2d3748'}}>
-                                                            {port.port}
+                                            <h3 className="section-title">Open Ports & Security Analysis</h3>
+                                            
+                                            {selectedDevice.openPorts.map((port, index) => (
+                                                <div key={index} className="enhanced-port-info">
+                                                    <div className="port-header">
+                                                        <div className="port-title">
+                                                            Port {port.port} - {port.service || 'Unknown Service'}
                                                         </div>
-                                                        <div style={{color: '#64748b', fontSize: '0.9rem', marginTop: '5px'}}>
-                                                            {port.service || 'Unknown Service'}
+                                                        <div className={`risk-indicator risk-${port.risk || 'low'}`}>
+                                                            {(port.risk || 'low').toUpperCase()} RISK
                                                         </div>
                                                     </div>
-                                                ))}
-                                            </div>
+                                                    
+                                                    {port.description && (
+                                                        <div style={{color: '#6b7280', fontSize: '0.9rem', marginBottom: '10px'}}>
+                                                            {port.description}
+                                                        </div>
+                                                    )}
+
+                                                    {/* SSL Certificate Information */}
+                                                    {port.sslInfo && (
+                                                        <div className="ssl-info-section">
+                                                            <div className="ssl-info-title">
+                                                                🔒 SSL/TLS Certificate Analysis
+                                                            </div>
+                                                            
+                                                            {port.sslInfo.hasSSL ? (
+                                                                <div>
+                                                                    <div className="ssl-status">
+                                                                        <span className={port.sslInfo.expired ? 'ssl-error' : port.sslInfo.daysUntilExpiry <= 30 ? 'ssl-warning' : 'ssl-valid'}>
+                                                                            {port.sslInfo.expired ? '❌ Certificate Expired' : 
+                                                                             port.sslInfo.daysUntilExpiry <= 30 ? `⚠️ Expires in ${port.sslInfo.daysUntilExpiry} days` :
+                                                                             `✅ Valid for ${port.sslInfo.daysUntilExpiry} days`}
+                                                                        </span>
+                                                                    </div>
+                                                                    
+                                                                    <div style={{fontSize: '0.9rem', color: '#374151', marginTop: '8px'}}>
+                                                                        <div><strong>Issued to:</strong> {port.sslInfo.subject?.CN || 'Unknown'}</div>
+                                                                        <div><strong>Issued by:</strong> {port.sslInfo.issuer?.CN || 'Unknown'}</div>
+                                                                        <div><strong>Valid until:</strong> {port.sslInfo.validTo}</div>
+                                                                        {port.sslInfo.selfSigned && (
+                                                                            <div className="ssl-warning">⚠️ Self-signed certificate</div>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {port.sslInfo.issues && port.sslInfo.issues.length > 0 && (
+                                                                        <div style={{marginTop: '10px'}}>
+                                                                            <div style={{fontWeight: '600', color: '#dc2626'}}>SSL Issues:</div>
+                                                                            {port.sslInfo.issues.map((issue, idx) => (
+                                                                                <div key={idx} style={{color: '#dc2626', fontSize: '0.9rem'}}>
+                                                                                    • {issue}
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="ssl-error">
+                                                                    ❌ No SSL certificate or connection failed
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Credential Testing Results */}
+                                                    {port.credentialTest && (
+                                                        <div className="credential-section">
+                                                            <div className="credential-title">
+                                                                🔑 Default Credential Analysis
+                                                            </div>
+                                                            
+                                                            <div style={{fontSize: '0.9rem', color: '#92400e', marginBottom: '8px'}}>
+                                                                Tested {port.credentialTest.testedCredentials} credential combinations
+                                                            </div>
+
+                                                            {port.credentialTest.vulnerableCredentials.length > 0 ? (
+                                                                <div>
+                                                                    <div style={{fontWeight: '600', color: '#dc2626', marginBottom: '8px'}}>
+                                                                        🚨 VULNERABLE: Default credentials found!
+                                                                    </div>
+                                                                    {port.credentialTest.vulnerableCredentials.map((cred, idx) => (
+                                                                        <div key={idx} className="credential-vulnerable">
+                                                                            <div className="credential-item">
+                                                                                {cred.username}:{cred.password} ({cred.service})
+                                                                            </div>
+                                                                            <div style={{fontSize: '0.8rem', color: '#991b1b', marginTop: '4px'}}>
+                                                                                {cred.evidence}
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <div style={{color: '#059669', fontWeight: '600'}}>
+                                                                    ✅ No default credentials detected
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
                                         </div>
                                     )}
 
@@ -1639,54 +1872,54 @@
 
                         {/* Security Page */}
                         <div className={`page ${currentPage === 'security' ? 'active' : ''}`}>
+                            {/* Export Section for Security */}
+                            {networkSecurity && (
+                                <div className="export-section">
+                                    <div className="export-header">
+                                        <div className="export-title">
+                                            <span>🛡️</span>
+                                            Security Report Export
+                                        </div>
+                                        <div className="export-buttons">
+                                            <button 
+                                                className="export-button export-pdf"
+                                                onClick={generatePDFReport}
+                                            >
+                                                📄 Full Security Report
+                                            </button>
+                                            <button 
+                                                className="export-button export-print"
+                                                onClick={printReport}
+                                            >
+                                                🖨️ Print Summary
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="export-description">
+                                        Generate comprehensive security reports for management or compliance documentation.
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Data Status Indicator */}
+                            {networkSecurity && (
+                                <div className="data-status">
+                                    <div className="data-status-info">
+                                        <div>🛡️</div>
+                                        <div>
+                                            <strong>Security Analysis:</strong> Based on scan {formatTimestamp(getScanTimestamp())}
+                                        </div>
+                                    </div>
+                                    <button 
+                                        className="refresh-button"
+                                        onClick={startNewScan}
+                                    >
+                                        🔄 Update Analysis
+                                    </button>
+                                </div>
+                            )}
+
                             <div className="security-container">
-                                {/* Export Section for Security */}
-                                {networkSecurity && (
-                                    <div className="export-section">
-                                        <div className="export-header">
-                                            <div className="export-title">
-                                                <span>🛡️</span>
-                                                Security Report Export
-                                            </div>
-                                            <div className="export-buttons">
-                                                <button 
-                                                    className="export-button export-pdf"
-                                                    onClick={generatePDFReport}
-                                                >
-                                                    📄 Full Security Report
-                                                </button>
-                                                <button 
-                                                    className="export-button export-print"
-                                                    onClick={printReport}
-                                                >
-                                                    🖨️ Print Summary
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div className="export-description">
-                                            Generate comprehensive security reports for management or compliance documentation.
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Data Status Indicator */}
-                                {networkSecurity && (
-                                    <div className="data-status">
-                                        <div className="data-status-info">
-                                            <div>🛡️</div>
-                                            <div>
-                                                <strong>Security Analysis:</strong> Based on scan {formatTimestamp(getScanTimestamp())}
-                                            </div>
-                                        </div>
-                                        <button 
-                                            className="refresh-button"
-                                            onClick={startNewScan}
-                                        >
-                                            🔄 Update Analysis
-                                        </button>
-                                    </div>
-                                )}
-
                                 <h2 className="security-title">Network Security Assessment</h2>
                                 
                                 <div className="security-overview">
