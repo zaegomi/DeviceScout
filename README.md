@@ -1,24 +1,50 @@
 # DeviceScout
 ## Network Security Made Simple
 
-DeviceScout is a comprehensive IoT device discovery and security assessment tool that helps users identify connected devices on their network and evaluate potential security vulnerabilities.
+DeviceScout is a comprehensive IoT device discovery and security assessment tool that helps users identify connected devices on their network and evaluate potential security vulnerabilities. Now featuring **enhanced SSL/TLS certificate analysis** and **default credential testing** for enterprise-grade security assessment.
 
 ![DeviceScout Logo](logo.png)
 
-## 🌟 Features
+## 🌟 Enhanced Features
 
 - **Real-time Network Scanning** - Discover all devices connected to your network using Nmap
-- **Device Identification** - Identify device types, manufacturers, and operating systems
-- **Security Assessment** - Evaluate potential vulnerabilities and security risks
+- **Advanced Device Identification** - Identify device types, manufacturers, and operating systems
+- **Enhanced Security Assessment** - Comprehensive vulnerability detection with SSL/TLS and credential analysis
+- **SSL/TLS Certificate Analysis** - Certificate validation, expiration monitoring, and security issue detection
+- **Default Credential Testing** - Automated testing for common default passwords across multiple protocols
+- **Professional Reporting** - PDF reports, CSV exports, and print-ready summaries
 - **User-friendly Interface** - Clean, professional web interface accessible to non-technical users
-- **Comprehensive Reporting** - Detailed device information and security recommendations
+- **Data Persistence** - Scan results survive page refreshes and browser sessions
+- **Detailed Device Analysis** - Click any device for comprehensive security breakdown
+
+## 🔒 Advanced Security Capabilities
+
+### **SSL/TLS Certificate Security**
+- **Certificate Expiration Monitoring** - Alerts for certificates expiring within 30 days
+- **Self-Signed Certificate Detection** - Identifies potentially insecure certificates
+- **Weak Cryptography Analysis** - Detects SHA-1 signatures and weak key lengths
+- **Certificate Chain Validation** - Comprehensive issuer and subject analysis
+- **Security Issue Reporting** - Clear identification of SSL/TLS vulnerabilities
+
+### **Default Credential Testing**
+- **Multi-Protocol Support** - HTTP Basic Auth, Telnet, and service-specific testing
+- **Comprehensive Database** - 200+ default credential combinations
+- **Vendor-Specific Testing** - Targeted checks for routers, printers, cameras, IoT devices
+- **Evidence Collection** - Detailed reporting of vulnerable credentials found
+- **Smart Testing Logic** - Prevents account lockouts while ensuring thorough coverage
+
+### **Enhanced Risk Assessment**
+- **Dynamic Risk Scoring** - SSL issues and default credentials heavily weighted
+- **Vendor-Specific Vulnerabilities** - Tailored security checks for major manufacturers
+- **Port Service Analysis** - Risk assessment for each open network service
+- **Professional Recommendations** - Actionable security guidance for each device
 
 ## 🏗️ Architecture
 
 DeviceScout consists of two main components:
 
-- **Frontend** - React-based web interface (`devicescout-frontend/`)
-- **Backend** - Node.js API server with Nmap integration (`devicescout-backend/`)
+- **Frontend** - React-based web interface with enhanced security visualization
+- **Backend** - Node.js API server with Nmap integration and advanced security testing
 
 ## 📋 Prerequisites
 
@@ -55,8 +81,8 @@ nmap --version
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/devicescout-frontend.git
-cd devicescout-frontend
+git clone https://github.com/YOUR_USERNAME/devicescout.git
+cd devicescout
 ```
 
 ### 2. Backend Setup
@@ -90,20 +116,36 @@ npx live-server
 
 ## 🖥️ Usage
 
+### Basic Operation
 1. **Ensure both servers are running:**
    - Backend: `http://localhost:3001`
    - Frontend: `http://localhost:5500` (or your live server port)
 
 2. **Open the frontend** in your web browser
 
-3. **Click "Click to Scan"** to start network discovery
+3. **Click "Click to Scan"** to start enhanced network discovery
 
-4. **Wait for scan completion** (30-60 seconds for typical home networks)
+4. **Wait for scan completion** (60-120 seconds for comprehensive security analysis)
 
-5. **View results:**
-   - **Dashboard** - Overview of discovered devices and security score
-   - **Devices** - Detailed list of all discovered devices
-   - **Security** - Security assessment and recommendations
+### Navigation & Features
+5. **View results across multiple pages:**
+   - **Dashboard** - Network overview with security metrics and export options
+   - **Devices** - Complete device list with security badges (click any device for detailed analysis)
+   - **Security** - Network-wide security assessment with professional reporting
+   - **Device Details** - Comprehensive per-device security analysis
+
+### Enhanced Security Analysis
+6. **Device Detail Pages include:**
+   - **SSL/TLS Certificate Analysis** - Certificate validation and security issues
+   - **Default Credential Results** - Vulnerable username/password combinations found
+   - **Port Security Assessment** - Risk analysis for each open service
+   - **Vendor-Specific Recommendations** - Tailored security guidance
+
+### Export & Reporting
+7. **Professional reporting options:**
+   - **PDF Reports** - Executive summaries with detailed security analysis
+   - **CSV Exports** - Complete device inventories for spreadsheet analysis
+   - **Print Summaries** - Clean reports for management presentations
 
 ## 📡 API Endpoints
 
@@ -114,7 +156,7 @@ The backend provides the following endpoints:
 | `GET /` | API status and health check |
 | `GET /api/network-info` | Get current network information |
 | `GET /api/test-nmap` | Test Nmap installation |
-| `GET /api/scan` | Perform comprehensive network device scan |
+| `GET /api/scan` | Perform comprehensive network device scan with enhanced security analysis |
 
 ## 🛠️ Development
 
@@ -123,16 +165,16 @@ The backend provides the following endpoints:
 ```
 DeviceScout/
 ├── devicescout-frontend/
-│   ├── index.html              # Main application file
-│   ├── devicescout-logo.png    # Application logo
+│   ├── index.html              # Main React application with enhanced UI
+│   ├── logo.png               # Application logo
 │   └── package.json
 └── devicescout-backend/
     ├── server.js               # Express server
     ├── package.json
     ├── routes/
-    │   └── network.js          # API routes
+    │   └── network.js          # API routes with enhanced security endpoints
     └── utils/
-        └── networkScanner.js   # Nmap integration
+        └── networkScanner.js   # Enhanced Nmap integration with SSL/TLS and credential testing
 ```
 
 ### Technology Stack
@@ -141,12 +183,15 @@ DeviceScout/
 - HTML5 / CSS3
 - JavaScript (ES6+)
 - React 18 (via CDN)
+- jsPDF (PDF generation)
 - Responsive Design
 
 **Backend:**
 - Node.js
 - Express.js
 - Nmap (via node-nmap package)
+- HTTPS/HTTP modules for SSL testing
+- Net module for credential testing
 - CORS enabled for cross-origin requests
 
 ### Testing the Setup
@@ -161,14 +206,19 @@ curl http://localhost:3001/api/network-info
 
 # Test Nmap integration
 curl http://localhost:3001/api/test-nmap
+
+# Test enhanced security scan
+curl http://localhost:3001/api/scan
 ```
 
 ## 🔒 Security Considerations
 
 - **Local Network Only** - DeviceScout scans your local network subnet
-- **No External Data Transmission** - All scanning is performed locally
-- **Admin Privileges** - Some advanced scanning features may require elevated permissions
+- **No External Data Transmission** - All scanning and analysis performed locally
+- **Responsible Testing** - Credential testing limited to prevent account lockouts
+- **Admin Privileges** - Enhanced scanning features may require elevated permissions
 - **Firewall Configuration** - Ensure your firewall allows local network communication
+- **SSL/TLS Analysis** - Certificate checking does not store or transmit sensitive data
 
 ## 🐛 Troubleshooting
 
@@ -179,13 +229,20 @@ curl http://localhost:3001/api/test-nmap
 - Ensure Nmap is in your system PATH
 - Restart terminal after installation (especially on Windows)
 
-**Port 3001 already in use:**
-- Change the PORT in `server.js` or kill the process using port 3001
-- Check what's using the port: `netstat -ano | findstr :3001` (Windows) or `lsof -i :3001` (Mac/Linux)
+**Enhanced scan takes longer:**
+- Normal enhanced scan time: 60-120 seconds for comprehensive analysis
+- SSL and credential testing add processing time
+- Large networks may take several minutes for complete assessment
 
-**Dependencies not found:**
-- Run `npm install` in the backend directory
-- Ensure Node.js is properly installed
+**SSL connection errors:**
+- Some devices may reject SSL connections from scanning tools
+- Self-signed certificates will generate warnings but still be analyzed
+- Network firewalls may block SSL analysis attempts
+
+**Permission errors:**
+- Enhanced security features may require administrator/root privileges
+- Run terminal as administrator (Windows) or use `sudo` (Mac/Linux)
+- Some credential testing requires elevated network access
 
 ### Frontend Issues
 
@@ -194,39 +251,88 @@ curl http://localhost:3001/api/test-nmap
 - Check browser console for CORS errors
 - Ensure both frontend and backend are running
 
-**Live Server not working:**
-- Try alternative: `python -m http.server 8000`
-- Or open `index.html` directly in browser (may have CORS limitations)
+**Export features not working:**
+- Ensure jsPDF library is loaded (check browser console)
+- Verify scan data exists before attempting export
+- Check browser's download/popup blocking settings
 
 ### Scanning Issues
 
-**Scan takes too long:**
-- Normal scan time: 30-60 seconds for home networks
-- Large corporate networks may take several minutes
-- Check network connectivity and stability
+**Enhanced scan timeout:**
+- Increase timeout values in scanner configuration
+- Skip problematic devices and continue with scan
+- Check network connectivity and device responsiveness
 
-**No devices found:**
-- Ensure you're connected to a WiFi/Ethernet network
-- Test with: `http://localhost:3001/api/network-info`
-- Check backend console for detailed error messages
+**No SSL information:**
+- Ensure target devices have HTTPS services running
+- Verify devices are not blocking SSL connections
+- Check that certificates are properly configured on target devices
 
-**Permission errors:**
-- Some Nmap features require administrator/root privileges
-- Run terminal as administrator (Windows) or use `sudo` (Mac/Linux)
+**Credential testing fails:**
+- Verify network connectivity to target services
+- Ensure services accept the tested authentication methods
+- Check for rate limiting or intrusion detection systems
 
 ## 📈 Performance Notes
 
-- **Scan Speed:** Typical home networks (20-30 devices) scan in 30-60 seconds
-- **Resource Usage:** Backend uses moderate CPU during scanning
-- **Network Impact:** Scanning generates network traffic but is non-intrusive
-- **Concurrent Scans:** Only one scan should run at a time
+- **Enhanced Scan Speed:** 60-120 seconds for comprehensive security analysis
+- **Resource Usage:** Higher CPU/memory usage during SSL and credential testing
+- **Network Impact:** More thorough scanning generates additional network traffic
+- **Concurrent Scans:** Only one enhanced scan should run at a time
+- **Data Persistence:** Scan results automatically saved to browser storage
+
+## 📊 Export & Reporting Features
+
+### **PDF Reports Include:**
+- Executive summary with network security score
+- Complete device inventory with risk assessments
+- SSL/TLS certificate analysis results
+- Default credential vulnerability findings
+- Professional security recommendations
+- Compliance-ready formatting
+
+### **CSV Exports Contain:**
+- Device name, IP, MAC address, vendor information
+- Security level and risk score for each device
+- Open ports and service information
+- Vulnerability summaries and recommendations
+- SSL certificate status and credential test results
+
+### **Print Summaries Feature:**
+- Clean, professional formatting
+- Key security metrics and findings
+- Management-ready presentation format
+
+## 🚀 Enhanced Security Features
+
+### **SSL/TLS Certificate Monitoring**
+DeviceScout now automatically analyzes SSL/TLS certificates on HTTPS services:
+
+- **Expiration Alerts:** Warns about certificates expiring within 30 days
+- **Security Validation:** Detects self-signed, expired, or weak certificates
+- **Compliance Checking:** Identifies certificates using outdated cryptographic standards
+- **Chain Analysis:** Validates certificate authority chains and trust relationships
+
+### **Default Credential Detection**
+Advanced credential testing across multiple protocols:
+
+- **HTTP Basic Authentication:** Tests web interface login forms
+- **Telnet Services:** Validates command-line access credentials
+- **Vendor-Specific Testing:** Tailored credential checks for major device manufacturers
+- **Evidence Collection:** Documents exactly which credentials were found vulnerable
+
+### **Risk Assessment Enhancements**
+- **Weighted Scoring:** SSL issues and default credentials receive high risk scores
+- **Vendor Awareness:** Device-specific vulnerability patterns and recommendations
+- **Service Analysis:** Port-by-port security assessment with specific guidance
+- **Compliance Mapping:** Security findings aligned with industry best practices
 
 ## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature-name`
 3. Make your changes in the appropriate directory (`devicescout-frontend/` or `devicescout-backend/`)
-4. Test your changes thoroughly
+4. Test your changes thoroughly, especially security features
 5. Commit with clear messages: `git commit -am 'Add feature: description'`
 6. Push to your branch: `git push origin feature-name`
 7. Submit a Pull Request
@@ -237,12 +343,13 @@ MIT License - see LICENSE file for details
 
 ## 🚀 Future Enhancements
 
-- **Advanced Security Scanning** - Port vulnerability analysis
-- **Network Topology Visualization** - Interactive network maps  
-- **Historical Data** - Track device changes over time
-- **Security Compliance Reports** - Generate professional security assessments
-- **Mobile Support** - Responsive design improvements
-- **Multi-Network Support** - Scan multiple network segments
+- **Advanced Vulnerability Scanning** - CVE database integration and exploit analysis
+- **Network Topology Visualization** - Interactive network maps with security overlays
+- **Historical Tracking** - Security posture trends and improvement tracking
+- **Compliance Frameworks** - NIST, ISO 27001, and industry standard alignment
+- **Mobile Applications** - iOS/Android apps for remote network monitoring
+- **Enterprise Integration** - SIEM integration and centralized management
+- **Advanced Analytics** - Machine learning for threat detection and prediction
 
 ## 📞 Support
 
@@ -250,7 +357,20 @@ For issues and questions:
 - **Create an issue** on GitHub with detailed error information
 - **Check the troubleshooting section** above for common solutions
 - **Include console output** (both frontend and backend) when reporting bugs
+- **Specify network environment** details for enhanced security feature issues
+
+## 🔍 What's New in Enhanced Version
+
+### **Version 2.0 - Enhanced Security Assessment**
+- ✅ **SSL/TLS Certificate Analysis** - Comprehensive certificate security validation
+- ✅ **Default Credential Testing** - Automated vulnerability detection across protocols
+- ✅ **Professional Reporting** - PDF generation with executive summaries
+- ✅ **Data Persistence** - Scan results survive browser refreshes
+- ✅ **Enhanced UI** - Detailed device analysis pages with security breakdowns
+- ✅ **Export Capabilities** - Multiple format support for reporting and analysis
+- ✅ **Risk Assessment** - Advanced scoring with SSL and credential weighting
+- ✅ **Vendor Intelligence** - Device-specific security recommendations
 
 ---
 
-**DeviceScout** - Making network security accessible to everyone.
+**DeviceScout** - Making enterprise-grade network security accessible to everyone.
