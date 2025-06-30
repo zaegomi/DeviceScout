@@ -417,12 +417,40 @@
             margin-top: 5px;
         }
 
-        .page {
-            display: none;
+        .data-status {
+            background: #f0f9ff;
+            border: 2px solid #bae6fd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .page.active {
-            display: block;
+        .data-status-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #0369a1;
+            font-weight: 500;
+        }
+
+        .refresh-button {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #0369a1, #0284c7);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(3, 105, 161, 0.3);
         }
 
         /* Device Detail Page Styles */
@@ -522,145 +550,12 @@
             padding: 25px;
         }
 
-        .security-score-large {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 20px 0;
+        .page {
+            display: none;
         }
 
-        .score-circle {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            font-weight: 700;
-            color: white;
-            margin-right: 30px;
-        }
-
-        .score-critical-bg { background: linear-gradient(135deg, #c53030, #e53e3e); }
-        .score-high-bg { background: linear-gradient(135deg, #d69e2e, #f6e05e); }
-        .score-medium-bg { background: linear-gradient(135deg, #38a169, #9ae6b4); }
-        .score-low-bg { background: linear-gradient(135deg, #4a5568, #cbd5e0); }
-
-        .score-info {
-            flex: 1;
-        }
-
-        .score-level {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-
-        .score-description {
-            font-size: 1.1rem;
-            color: #4a5568;
-            line-height: 1.5;
-        }
-
-        .vulnerability-detail-list {
-            list-style: none;
-            padding: 0;
-            margin: 20px 0;
-        }
-
-        .vulnerability-detail-item {
-            background: white;
-            margin: 10px 0;
-            padding: 15px;
-            border-radius: 10px;
-            border-left: 4px solid #e53e3e;
-            font-size: 1rem;
-            color: #4a5568;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .recommendation-detail-list {
-            list-style: none;
-            padding: 0;
-            margin: 20px 0;
-        }
-
-        .recommendation-detail-item {
-            background: white;
-            margin: 10px 0;
-            padding: 15px;
-            border-radius: 10px;
-            border-left: 4px solid #38a169;
-            font-size: 1rem;
-            color: #4a5568;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .ports-section {
-            margin-top: 20px;
-        }
-
-        .port-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .port-item {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            border: 2px solid #e2e8f0;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .port-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        .port-number {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #2d3748;
-        }
-
-        .port-service {
-            color: #64748b;
-            font-size: 0.9rem;
-            margin-top: 5px;
-        }
-
-        .port-risk {
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-top: 8px;
-            display: inline-block;
-        }
-
-        .risk-critical {
-            background: #fee;
-            color: #c53030;
-        }
-
-        .risk-high {
-            background: #fef5e7;
-            color: #d69e2e;
-        }
-
-        .risk-medium {
-            background: #f0fff4;
-            color: #38a169;
-        }
-
-        .risk-low {
-            background: #f7fafc;
-            color: #4a5568;
+        .page.active {
+            display: block;
         }
 
         .loading-animation {
@@ -740,6 +635,10 @@
             .security-overview {
                 grid-template-columns: 1fr;
             }
+
+            .device-detail-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -747,7 +646,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useEffect } = React;
 
         function DeviceScout() {
             const [currentPage, setCurrentPage] = useState('start');
@@ -760,7 +659,80 @@
             const [vulnerabilityStats, setVulnerabilityStats] = useState(null);
             const [selectedDevice, setSelectedDevice] = useState(null);
 
+            // Load saved data on component mount
+            useEffect(() => {
+                loadSavedData();
+            }, []);
+
+            // Save data to localStorage whenever it changes
+            useEffect(() => {
+                if (devices.length > 0) {
+                    saveScanData();
+                }
+            }, [devices, networkSecurity, vulnerabilityStats, deviceCount]);
+
+            const saveScanData = () => {
+                const scanData = {
+                    deviceCount,
+                    devices,
+                    networkSecurity,
+                    vulnerabilityStats,
+                    scanTimestamp: new Date().toISOString()
+                };
+                
+                try {
+                    localStorage.setItem('deviceScoutScanData', JSON.stringify(scanData));
+                    console.log('💾 Scan data saved to localStorage');
+                } catch (error) {
+                    console.error('❌ Failed to save scan data:', error);
+                }
+            };
+
+            const loadSavedData = () => {
+                try {
+                    const savedData = localStorage.getItem('deviceScoutScanData');
+                    if (savedData) {
+                        const scanData = JSON.parse(savedData);
+                        
+                        setDeviceCount(scanData.deviceCount || 0);
+                        setDevices(scanData.devices || []);
+                        setNetworkSecurity(scanData.networkSecurity || null);
+                        setVulnerabilityStats(scanData.vulnerabilityStats || null);
+                        
+                        // If we have saved data, go to dashboard instead of start page
+                        if (scanData.devices && scanData.devices.length > 0) {
+                            setCurrentPage('dashboard');
+                            console.log('📂 Loaded saved scan data from localStorage');
+                            console.log(`🔄 Restored ${scanData.devices.length} devices from ${scanData.scanTimestamp}`);
+                        }
+                    }
+                } catch (error) {
+                    console.error('❌ Failed to load saved data:', error);
+                }
+            };
+
+            const clearScanData = () => {
+                try {
+                    localStorage.removeItem('deviceScoutScanData');
+                    console.log('🗑️ Cleared saved scan data');
+                } catch (error) {
+                    console.error('❌ Failed to clear saved data:', error);
+                }
+                
+                // Reset all state
+                setDeviceCount(0);
+                setDevices([]);
+                setNetworkSecurity(null);
+                setVulnerabilityStats(null);
+                setSelectedDevice(null);
+                setScanProgress(0);
+                setScanStatus('');
+            };
+
             const handleScan = async () => {
+                // Clear any existing data before starting new scan
+                clearScanData();
+                
                 setIsScanning(true);
                 setScanProgress(0);
                 setScanStatus('Initializing scan...');
@@ -829,6 +801,37 @@
                 setCurrentPage('device-detail');
             };
 
+            const startNewScan = () => {
+                // Clear all data and go to start page
+                clearScanData();
+                setCurrentPage('start');
+            };
+
+            const getScanTimestamp = () => {
+                try {
+                    const savedData = localStorage.getItem('deviceScoutScanData');
+                    if (savedData) {
+                        const scanData = JSON.parse(savedData);
+                        return scanData.scanTimestamp;
+                    }
+                } catch (error) {
+                    console.error('❌ Failed to get scan timestamp:', error);
+                }
+                return null;
+            };
+
+            const formatTimestamp = (timestamp) => {
+                if (!timestamp) return 'Unknown';
+                const date = new Date(timestamp);
+                const now = new Date();
+                const diffMinutes = Math.floor((now - date) / (1000 * 60));
+                
+                if (diffMinutes < 1) return 'Just now';
+                if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+                if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)} hour${Math.floor(diffMinutes / 60) > 1 ? 's' : ''} ago`;
+                return date.toLocaleString();
+            };
+
             const getSecurityScoreClass = (score) => {
                 if (score >= 90) return 'score-excellent';
                 if (score >= 70) return 'score-good';
@@ -874,7 +877,7 @@
                                 </button>
                                 <button 
                                     className="nav-button"
-                                    onClick={() => setCurrentPage('start')}
+                                    onClick={startNewScan}
                                 >
                                     New Scan
                                 </button>
@@ -925,6 +928,24 @@
 
                         {/* Dashboard Page */}
                         <div className={`page ${currentPage === 'dashboard' ? 'active' : ''}`}>
+                            {/* Data Status Indicator */}
+                            {devices.length > 0 && (
+                                <div className="data-status">
+                                    <div className="data-status-info">
+                                        <div>📡</div>
+                                        <div>
+                                            <strong>Last Scan:</strong> {formatTimestamp(getScanTimestamp())}
+                                        </div>
+                                    </div>
+                                    <button 
+                                        className="refresh-button"
+                                        onClick={startNewScan}
+                                    >
+                                        🔄 Refresh Scan
+                                    </button>
+                                </div>
+                            )}
+
                             <div className="dashboard-grid">
                                 <div className="dashboard-card">
                                     <h2 className="card-title">Total Devices</h2>
@@ -989,6 +1010,24 @@
                         {/* Devices Page */}
                         <div className={`page ${currentPage === 'devices' ? 'active' : ''}`}>
                             <div className="device-container">
+                                {/* Data Status Indicator */}
+                                {devices.length > 0 && (
+                                    <div className="data-status">
+                                        <div className="data-status-info">
+                                            <div>🔍</div>
+                                            <div>
+                                                <strong>Scan Results:</strong> {devices.length} devices found {formatTimestamp(getScanTimestamp())}
+                                            </div>
+                                        </div>
+                                        <button 
+                                            className="refresh-button"
+                                            onClick={startNewScan}
+                                        >
+                                            🔄 New Scan
+                                        </button>
+                                    </div>
+                                )}
+
                                 <h2 className="device-title">Device Security Analysis</h2>
                                 <div className="device-list">
                                     {devices.length > 0 ? (
@@ -1148,35 +1187,14 @@
                                             <div className="security-detail-section">
                                                 <h3 className="section-title">Security Assessment</h3>
                                                 
-                                                <div className="security-score-large">
-                                                    <div className={`score-circle score-${selectedDevice.security.securityLevel.toLowerCase()}-bg`}>
-                                                        {selectedDevice.security.riskScore}/100
-                                                    </div>
-                                                    <div className="score-info">
-                                                        <div className={`score-level score-${selectedDevice.security.securityLevel.toLowerCase()}`}>
-                                                            {selectedDevice.security.securityLevel} Risk
-                                                        </div>
-                                                        <div className="score-description">
-                                                            {selectedDevice.security.securityLevel === 'Critical' && 
-                                                                'This device poses a critical security risk and requires immediate attention.'}
-                                                            {selectedDevice.security.securityLevel === 'High' && 
-                                                                'This device has significant security vulnerabilities that should be addressed soon.'}
-                                                            {selectedDevice.security.securityLevel === 'Medium' && 
-                                                                'This device has moderate security concerns that should be reviewed.'}
-                                                            {selectedDevice.security.securityLevel === 'Low' && 
-                                                                'This device appears to have good security with minor issues.'}
-                                                        </div>
-                                                    </div>
-                                                </div>
-
                                                 {selectedDevice.security.vulnerabilities.length > 0 && (
                                                     <div>
                                                         <h4 style={{color: '#e53e3e', fontSize: '1.3rem', marginBottom: '15px'}}>
                                                             🚨 Security Vulnerabilities
                                                         </h4>
-                                                        <ul className="vulnerability-detail-list">
+                                                        <ul className="vulnerability-list">
                                                             {selectedDevice.security.vulnerabilities.map((vuln, index) => (
-                                                                <li key={index} className="vulnerability-detail-item">
+                                                                <li key={index} className="vulnerability-item">
                                                                     {vuln}
                                                                 </li>
                                                             ))}
@@ -1185,13 +1203,13 @@
                                                 )}
 
                                                 {selectedDevice.security.recommendations.length > 0 && (
-                                                    <div>
+                                                    <div style={{marginTop: '20px'}}>
                                                         <h4 style={{color: '#38a169', fontSize: '1.3rem', marginBottom: '15px'}}>
                                                             ✅ Security Recommendations
                                                         </h4>
-                                                        <ul className="recommendation-detail-list">
+                                                        <ul className="vulnerability-list">
                                                             {selectedDevice.security.recommendations.map((rec, index) => (
-                                                                <li key={index} className="recommendation-detail-item">
+                                                                <li key={index} className="recommendation-item">
                                                                     {rec}
                                                                 </li>
                                                             ))}
@@ -1204,15 +1222,22 @@
 
                                     {/* Open Ports Section */}
                                     {selectedDevice.openPorts && selectedDevice.openPorts.length > 0 && (
-                                        <div className="ports-section">
+                                        <div style={{marginTop: '30px'}}>
                                             <h3 className="section-title">Open Ports & Services</h3>
-                                            <div className="port-list">
+                                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '15px', marginTop: '15px'}}>
                                                 {selectedDevice.openPorts.map((port, index) => (
-                                                    <div key={index} className="port-item">
-                                                        <div className="port-number">{port.port}</div>
-                                                        <div className="port-service">{port.service || 'Unknown Service'}</div>
-                                                        <div className={`port-risk risk-${port.risk || 'low'}`}>
-                                                            {(port.risk || 'low').toUpperCase()} RISK
+                                                    <div key={index} style={{
+                                                        background: 'white',
+                                                        padding: '15px',
+                                                        borderRadius: '10px',
+                                                        border: '2px solid #e2e8f0',
+                                                        textAlign: 'center'
+                                                    }}>
+                                                        <div style={{fontSize: '1.5rem', fontWeight: '700', color: '#2d3748'}}>
+                                                            {port.port}
+                                                        </div>
+                                                        <div style={{color: '#64748b', fontSize: '0.9rem', marginTop: '5px'}}>
+                                                            {port.service || 'Unknown Service'}
                                                         </div>
                                                     </div>
                                                 ))}
@@ -1222,7 +1247,7 @@
 
                                     {/* No open ports message */}
                                     {(!selectedDevice.openPorts || selectedDevice.openPorts.length === 0) && (
-                                        <div className="ports-section">
+                                        <div style={{marginTop: '30px'}}>
                                             <h3 className="section-title">Open Ports & Services</h3>
                                             <div style={{
                                                 background: '#f0fff4', 
@@ -1245,6 +1270,24 @@
                         {/* Security Page */}
                         <div className={`page ${currentPage === 'security' ? 'active' : ''}`}>
                             <div className="security-container">
+                                {/* Data Status Indicator */}
+                                {networkSecurity && (
+                                    <div className="data-status">
+                                        <div className="data-status-info">
+                                            <div>🛡️</div>
+                                            <div>
+                                                <strong>Security Analysis:</strong> Based on scan {formatTimestamp(getScanTimestamp())}
+                                            </div>
+                                        </div>
+                                        <button 
+                                            className="refresh-button"
+                                            onClick={startNewScan}
+                                        >
+                                            🔄 Update Analysis
+                                        </button>
+                                    </div>
+                                )}
+
                                 <h2 className="security-title">Network Security Assessment</h2>
                                 
                                 <div className="security-overview">
